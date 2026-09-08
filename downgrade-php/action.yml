@@ -1,0 +1,36 @@
+name: 'Downgrade PHP sources'
+description: 'Downgrade PHP sources in place to a target version with a throwaway, isolated Rector install.'
+author: 'php-internal'
+
+branding:
+  icon: 'chevron-down'
+  color: 'purple'
+
+inputs:
+  paths:
+    description: 'Space-separated files or directories to downgrade, relative to the workspace.'
+    required: true
+  php-version:
+    description: 'Target PHP version to downgrade the sources to (one of 8.0, 8.1, 8.2, 8.3, 8.4).'
+    required: false
+    default: '8.1'
+  skip:
+    description: 'Space-separated paths or glob patterns to skip (e.g. unparseable resource stubs or fixtures).'
+    required: false
+    default: ''
+  rector-version:
+    description: 'Composer version constraint for the throwaway rector/rector install.'
+    required: false
+    default: '^2.6'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Downgrade sources to PHP ${{ inputs.php-version }}'
+      shell: bash
+      env:
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_PHP_VERSION: ${{ inputs.php-version }}
+        INPUT_SKIP: ${{ inputs.skip }}
+        INPUT_RECTOR_VERSION: ${{ inputs.rector-version }}
+      run: bash "$GITHUB_ACTION_PATH/downgrade.sh"
