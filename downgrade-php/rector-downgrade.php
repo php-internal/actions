@@ -40,6 +40,12 @@ foreach (preg_split('/\s+/', trim((string) getenv('DOWNGRADE_SKIP'))) ?: [] as $
 return RectorConfig::configure()
     ->withPaths($paths)
     ->withSkip($skip)
+    // Parse the input as a recent PHP so the lexer accepts syntax newer than the target: we are
+    // downgrading, so the sources on the way in use the newer syntax. Rector would otherwise
+    // auto-detect the version from the project's composer.json, which the caller pins to the
+    // target (require.php and config.platform.php), turning `readonly class` and the like into a
+    // parse error before any downgrade rule can run.
+    ->withPhpVersion(80_400)
     ->withDowngradeSets(
         php84: $version === '8.4',
         php83: $version === '8.3',
