@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * JSON surgery for the `install-php` action. Kept out of the shell because loosening a
+ * JSON surgery for the `downgrade` action. Kept out of the shell because loosening a
  * `require.php` constraint, pinning a path package's version and prepending a path repository
  * are all `composer.json` edits that jq-in-bash makes fragile.
  *

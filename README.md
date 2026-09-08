@@ -5,7 +5,7 @@ action lives in its own directory and is referenced as `php-internal/actions/<na
 
 ## Actions
 
-### `install-php`
+### `downgrade`
 
 Installs a project's Composer dependencies for a PHP version *older* than the code targets,
 then downgrades whatever the older runtime cannot parse. Use it to run a suite written for a
@@ -16,7 +16,7 @@ Then it pins `config.platform.php` to the target and resolves for real, so Compo
 target-compatible version of every dependency that has one (symfony 6 rather than 8) and fails
 *only* on packages that have no compatible version at all. Those — and only those — are copied
 out of `vendor/`, re-advertised as target-compatible through a path repository, and the resolve
-is retried until it settles. A single Rector pass (via `downgrade-php`) then rewrites the copied
+is retried until it settles. A single Rector pass (via `downgrade-rector`) then rewrites the copied
 packages and any project sources given in `paths`.
 
 Only the solver can tell a *hard* package (no compatible version, e.g. a package that only ever
@@ -51,7 +51,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
     php-version: '8.1'
 
 - name: Install dependencies and downgrade for PHP 8.1
-  uses: php-internal/actions/install-php@v1
+  uses: php-internal/actions/downgrade@v1
   with:
     php-version: '8.1'
     # paths is only needed when the project's own code targets a newer PHP:
@@ -60,7 +60,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
 - run: composer test
 ```
 
-### `downgrade-php`
+### `downgrade-rector`
 
 Downgrades PHP sources in place to a target version, so a codebase written for a newer PHP
 can be exercised on an older runtime in CI. The transform runs before anything loads the
@@ -96,7 +96,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
     composer-options: --ignore-platform-req=php
 
 - name: Downgrade the sources to PHP 8.1
-  uses: php-internal/actions/downgrade-php@v1
+  uses: php-internal/actions/downgrade-rector@v1
   with:
     paths: core plugin bridge tests testo.php
     php-version: '8.1'

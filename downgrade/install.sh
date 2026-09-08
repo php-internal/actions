@@ -119,4 +119,4 @@ INPUT_PATHS="${rector_paths[*]}" \
 INPUT_PHP_VERSION="$target" \
 INPUT_SKIP="$skip" \
 INPUT_RECTOR_VERSION="$rector_version" \
-  bash "${action_dir}/../downgrade-php/downgrade.sh"
+  bash "${action_dir}/../downgrade-rector/downgrade.sh"

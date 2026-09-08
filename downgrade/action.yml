@@ -1,4 +1,4 @@
-name: 'Install for a lower PHP'
+name: 'Downgrade a project to a lower PHP'
 description: 'Install Composer dependencies for a PHP version older than the code targets, downgrading only what has no compatible version.'
 author: 'php-internal'
 

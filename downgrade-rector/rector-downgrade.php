@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 
 /**
- * Rector config for the `downgrade-php` action. Driven by two environment variables the
+ * Rector config for the `downgrade-rector` action. Driven by two environment variables the
  * action sets: DOWNGRADE_PATHS (space-separated, workspace-relative) and DOWNGRADE_PHP_VERSION.
  *
  * It applies Rector's full downgrade set down to the requested version, so every construct
