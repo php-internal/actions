@@ -11,8 +11,9 @@ inputs:
     description: 'Target PHP version to install and downgrade for (one of 8.0, 8.1, 8.2, 8.3, 8.4).'
     required: true
   paths:
-    description: 'Space-separated project sources to downgrade, relative to the working directory.'
-    required: true
+    description: 'Space-separated project sources to also downgrade, relative to the working directory. Incompatible dependencies are downgraded automatically; use this only for the project''s own code when it targets a newer PHP.'
+    required: false
+    default: ''
   dependency-versions:
     description: "Which dependency versions to resolve: 'lowest' or 'highest'."
     required: false

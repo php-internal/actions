@@ -11,17 +11,20 @@ Installs a project's Composer dependencies for a PHP version *older* than the co
 then downgrades whatever the older runtime cannot parse. Use it to run a suite written for a
 newer PHP on an older one in CI, without carrying compatibility shims in the real source.
 
-It pins `config.platform.php` to the target, so Composer resolves the graph as if it were
-running on that PHP: every dependency that has a target-compatible version is picked at that
-version (symfony 6 rather than 8), and the resolve fails *only* on packages that have no
-compatible version at all. Those — and only those — are copied out of `vendor/`, re-advertised
-as target-compatible through a path repository, and the resolve is retried until it settles.
-A single Rector pass (via `downgrade-php`) then rewrites the copied packages and the project's
-own sources.
+It first installs once ignoring the platform, purely to pull every package's sources onto disk.
+Then it pins `config.platform.php` to the target and resolves for real, so Composer picks a
+target-compatible version of every dependency that has one (symfony 6 rather than 8) and fails
+*only* on packages that have no compatible version at all. Those — and only those — are copied
+out of `vendor/`, re-advertised as target-compatible through a path repository, and the resolve
+is retried until it settles. A single Rector pass (via `downgrade-php`) then rewrites the copied
+packages and any project sources given in `paths`.
 
-This is deliberately not `--ignore-platform-req=php`: dropping the constraint entirely makes
-Composer pull the newest of everything (symfony 8 on PHP 8.1), which is far more, and far
-riskier, code to downgrade.
+Only the solver can tell a *hard* package (no compatible version, e.g. a package that only ever
+targeted 8.2+) from a merely *droppable* one (a lower compatible version exists, e.g. symfony),
+so the retried resolve drives the relief rather than a walk of `composer.lock`, which cannot tell
+the two apart. This is also why it is not `--ignore-platform-req=php`: dropping the constraint
+outright makes Composer pull the newest of everything (symfony 8 on PHP 8.1), which is far more,
+and far riskier, code to downgrade.
 
 On an old runtime, prefer `dependency-versions: lowest`. Rector's downgrade sets cover syntax
 and some polyfillable functions, but not every 8.2+ *semantic* (e.g. `memory_reset_peak_usage()`
@@ -34,7 +37,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
 | Input                 | Required | Default   | Description                                                        |
 |-----------------------|----------|-----------|--------------------------------------------------------------------|
 | `php-version`         | yes      | —         | Target PHP version: one of `8.0`, `8.1`, `8.2`, `8.3`, `8.4`.      |
-| `paths`               | yes      | —         | Space-separated project sources to downgrade, working-directory-relative. |
+| `paths`               | no       | `''`      | Extra project sources to downgrade (deps are handled automatically); only needed when the project's own code targets a newer PHP. |
 | `dependency-versions` | no       | `highest` | Which versions to resolve: `lowest` or `highest`.                  |
 | `skip`                | no       | `''`      | Space-separated paths or glob patterns to skip during the downgrade. |
 | `rector-version`      | no       | `^2.6`    | Composer version constraint for the throwaway `rector/rector`.     |
@@ -51,9 +54,8 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
   uses: php-internal/actions/install-php@v1
   with:
     php-version: '8.1'
-    dependency-versions: lowest
-    paths: core plugin bridge tests testo.php
-    skip: bridge/symfony-console/resources/stubs
+    # paths is only needed when the project's own code targets a newer PHP:
+    # paths: src tests
 
 - run: composer test
 ```
