@@ -14,7 +14,10 @@ set -euo pipefail
 paths="${INPUT_PATHS:?The 'paths' input is required.}"
 php_version="${INPUT_PHP_VERSION:-8.1}"
 rector_version="${INPUT_RECTOR_VERSION:-^2.6}"
-action_dir="${GITHUB_ACTION_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+# Resolve to this script's own directory, not $GITHUB_ACTION_PATH: when install-php calls this
+# script, that variable still points at install-php, but the Rector config sits next to *this*
+# file in downgrade-php.
+action_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # The paths input is workspace-relative; capture the workspace before switching directories so the
 # Rector config resolves it regardless of where Rector runs from.
