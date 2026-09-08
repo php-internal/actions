@@ -89,22 +89,31 @@ function relieve(string $pkg, string $dest, string $target, string $composerJson
 {
     $root = dirname(realpath($composerJson) ?: $composerJson);
     $info = installed_package($root, $pkg);
-
-    $source = realpath($root . '/vendor/composer/' . ($info['install-path'] ?? ('../' . $pkg)));
-    $source === false and fail("Cannot locate the installed sources of {$pkg}.");
-
     $absoluteDest = $root . '/' . ltrim($dest, '/');
-    copy_tree($source, $absoluteDest);
 
-    $manifestPath = $absoluteDest . '/composer.json';
-    $manifest = read_json($manifestPath);
+    // A metapackage ships no files (and has no install-path), so there is nothing to copy or
+    // downgrade; synthesize a manifest carrying its requirements so a path repository can stand in
+    // for it. Every other package is copied out of vendor/ and its own manifest patched.
+    if (($info['type'] ?? '') === 'metapackage' || ($info['install-path'] ?? null) === null) {
+        is_dir($absoluteDest) or mkdir($absoluteDest, 0o777, true);
+        $manifest = ['name' => $pkg, 'type' => 'metapackage'];
+        if (isset($info['require']) && is_array($info['require'])) {
+            $manifest['require'] = $info['require'];
+        }
+    } else {
+        $source = realpath($root . '/vendor/composer/' . $info['install-path']);
+        $source === false and fail("Cannot locate the installed sources of {$pkg}.");
+        copy_tree($source, $absoluteDest);
+        $manifest = read_json($absoluteDest . '/composer.json');
+    }
+
     // Pin the exact installed version so the path repository resolves to a concrete version, and
     // loosen the php floor so the pinned platform accepts it.
     $manifest['version'] = (string) ($info['version'] ?? '0.0.0');
     if (isset($manifest['require']['php'])) {
         $manifest['require']['php'] = '>=' . $target;
     }
-    write_json($manifestPath, $manifest);
+    write_json($absoluteDest . '/composer.json', $manifest);
 
     add_path_repository($composerJson, $dest);
     fwrite(STDERR, "Relieved {$pkg} ({$manifest['version']}) into {$dest}.\n");
