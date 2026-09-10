@@ -52,6 +52,19 @@ final class DowngradeRectorTest
         Assert::string($downgraded)->notContains('readonly class')->contains('class Card');
     }
 
+    public function downgradesMultilinePathsWhereAnEntryContainsSpaces(): void
+    {
+        $this->project = AcceptanceProject::create();
+        $this->project->writeFile('src/Card.php', self::NEWER_SYNTAX);
+        $this->project->writeFile('weird dir/Card.php', self::NEWER_SYNTAX);
+
+        $result = $this->project->runRector("src\nweird dir/Card.php\n", '8.1');
+
+        Assert::same($result['exit'], 0, $result['stderr']);
+        Assert::string($this->project->read('src/Card.php'))->notContains('readonly class');
+        Assert::string($this->project->read('weird dir/Card.php'))->notContains('readonly class');
+    }
+
     public function skipInputLeavesMatchingPathUntouched(): void
     {
         $this->project = AcceptanceProject::create();

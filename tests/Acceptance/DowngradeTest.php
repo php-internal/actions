@@ -93,6 +93,18 @@ final class DowngradeTest
         Assert::string($this->project->read('src/Card.php'))->notContains('readonly class')->contains('class Card');
     }
 
+    public function downgradesAMultilineProjectPathThatContainsSpaces(): void
+    {
+        $this->project = $this->projectRequiring('acme/soft');
+        $this->project->addPathPackage('acme/soft', ['version' => '1.0.0', 'require' => ['php' => '>=8.0']]);
+        $this->project->writeFile('weird dir/Card.php', \sprintf(self::READONLY_CLASS, 'App'));
+
+        $result = $this->project->runInstall('8.1', ['paths' => "weird dir/Card.php\n"]);
+
+        Assert::same($result['exit'], 0, $result['stderr']);
+        Assert::string($this->project->read('weird dir/Card.php'))->notContains('readonly class');
+    }
+
     private function projectRequiring(string $package): AcceptanceProject
     {
         $project = AcceptanceProject::create();

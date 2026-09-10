@@ -14,9 +14,20 @@ use Rector\Config\RectorConfig;
 
 $workspace = getenv('GITHUB_WORKSPACE') ?: getcwd();
 
+// Split a list input. Written on one line it is whitespace-separated (the compact form); written as
+// a multiline block it is one entry per line, which lets an entry contain spaces. Entries are
+// trimmed and blanks dropped.
+$splitList = static function (string $raw): array {
+    $parts = str_contains($raw, "\n")
+        ? preg_split('/\R/', $raw)
+        : preg_split('/\s+/', trim($raw));
+
+    return array_values(array_filter(array_map('trim', $parts ?: []), static fn(string $p): bool => $p !== ''));
+};
+
 $paths = [];
-foreach (preg_split('/\s+/', trim((string) getenv('DOWNGRADE_PATHS'))) ?: [] as $path) {
-    $path === '' or $paths[] = $workspace . '/' . ltrim($path, '/');
+foreach ($splitList((string) getenv('DOWNGRADE_PATHS')) as $path) {
+    $paths[] = $workspace . '/' . ltrim($path, '/');
 }
 $paths === [] and throw new RuntimeException('DOWNGRADE_PATHS resolved to no paths.');
 
@@ -28,10 +39,7 @@ $supported = ['8.0', '8.1', '8.2', '8.3', '8.4'];
 
 // A glob pattern is passed to Rector verbatim; a plain path is resolved against the workspace.
 $skip = [];
-foreach (preg_split('/\s+/', trim((string) getenv('DOWNGRADE_SKIP'))) ?: [] as $entry) {
-    if ($entry === '') {
-        continue;
-    }
+foreach ($splitList((string) getenv('DOWNGRADE_SKIP')) as $entry) {
     $skip[] = (str_contains($entry, '*') || str_starts_with($entry, '/'))
         ? $entry
         : $workspace . '/' . ltrim($entry, '/');

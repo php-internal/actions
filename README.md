@@ -37,7 +37,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
 | Input                 | Required | Default   | Description                                                        |
 |-----------------------|----------|-----------|--------------------------------------------------------------------|
 | `php-version`         | yes      | —         | Target PHP version: one of `8.0`, `8.1`, `8.2`, `8.3`, `8.4`.      |
-| `paths`               | no       | `''`      | Extra project sources to downgrade (deps are handled automatically); only needed when the project's own code targets a newer PHP. |
+| `paths`               | no       | `''`      | Extra project sources to downgrade (deps are handled automatically); only needed when the project's own code targets a newer PHP. Space-separated on one line, or one per line as a multiline block — the multiline form lets a path contain spaces. |
 | `dependency-versions` | no       | `highest` | Which versions to resolve: `lowest` or `highest`.                  |
 | `skip`                | no       | `''`      | Space-separated paths or glob patterns to skip during the downgrade. |
 | `rector-version`      | no       | `^2.6`    | Composer version constraint for the throwaway `rector/rector`.     |
@@ -79,7 +79,7 @@ Requires PHP and Composer on the runner (e.g. via `shivammathur/setup-php`).
 
 | Input            | Required | Default | Description                                                        |
 |------------------|----------|---------|--------------------------------------------------------------------|
-| `paths`          | yes      | —       | Space-separated files or directories to downgrade, workspace-relative. |
+| `paths`          | yes      | —       | Files or directories to downgrade, workspace-relative. Space-separated on one line, or one per line as a multiline block — the multiline form lets a path contain spaces. |
 | `php-version`    | no       | `8.1`   | Target PHP version: one of `8.0`, `8.1`, `8.2`, `8.3`, `8.4`.       |
 | `skip`           | no       | `''`    | Space-separated paths or glob patterns to skip — e.g. unparseable resource stubs or fixtures. |
 | `rector-version` | no       | `^2.6`  | Composer version constraint for the throwaway `rector/rector`.     |

@@ -105,17 +105,29 @@ if [ "$status" -ne 0 ]; then
 fi
 
 # Downgrade the relieved package copies (symlinked into vendor/) and any project paths, so the
-# code parses on the target. Skip Rector entirely when there is nothing to rewrite.
-rector_paths=("${relieved_dirs[@]}")
-[ -n "$paths" ] && rector_paths=($paths "${rector_paths[@]}")
+# code parses on the target. The `paths` input is a whitespace-separated list on one line, or one
+# path per line when written as a multiline block — the latter lets a path contain spaces.
+user_paths=()
+if [ -n "$paths" ]; then
+  case "$paths" in
+    *$'\n'*) while read -r line; do if [ -n "$line" ]; then user_paths+=("$line"); fi; done <<< "$paths" ;;
+    *)       read -r -a user_paths <<< "$paths" ;;
+  esac
+fi
 
+# Skip Rector entirely when there is nothing to rewrite.
+rector_paths=("${user_paths[@]}" "${relieved_dirs[@]}")
 if [ "${#rector_paths[@]}" -eq 0 ]; then
   echo "Nothing to downgrade; every dependency already supports PHP ${target}."
   exit 0
 fi
 
+# Forward the list newline-separated so an entry that contains a space survives into Rector. printf
+# -v keeps the trailing newline that a "$(...)" substitution would strip — the newline is the signal
+# a single spaced entry needs to not be re-split on spaces downstream.
 echo "Downgrading ${#rector_paths[@]} path(s) to PHP ${target}."
-INPUT_PATHS="${rector_paths[*]}" \
+printf -v rector_paths_joined '%s\n' "${rector_paths[@]}"
+INPUT_PATHS="$rector_paths_joined" \
 INPUT_PHP_VERSION="$target" \
 INPUT_SKIP="$skip" \
 INPUT_RECTOR_VERSION="$rector_version" \
