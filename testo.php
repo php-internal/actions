@@ -9,5 +9,6 @@ return new ApplicationConfig(
     src: [],
     suites: [
         new SuiteConfig(name: 'Unit', location: ['tests/Unit']),
+        new SuiteConfig(name: 'Acceptance', location: ['tests/Acceptance']),
     ],
 );
