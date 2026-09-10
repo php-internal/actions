@@ -1,0 +1,10 @@
+# Ignore all top-level dot-directories (.agents, .claude, .idea, …); they are
+# auto-generated (skills sync creates .agents/skills and the .claude alias) or IDE-local.
+/.*/
+!/.github/
+
+/runtime/
+/vendor/
+/.env
+*.log
+composer.lock
