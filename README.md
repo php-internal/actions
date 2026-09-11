@@ -2,9 +2,12 @@
 
 <div align="center">
 
-[![Vibe Index](https://img.shields.io/static/v1?label=Vibe+Index&message=0.0&color=1cba95&style=for-the-badge)](https://github.com/roxblnfk/action-vibe-index)
-[![Tests](https://img.shields.io/github/actions/workflow/status/php-internal/actions/tests.yml?branch=main&style=for-the-badge&logo=github&label=tests)](https://github.com/php-internal/actions/actions/workflows/tests.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](composer.json)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Vibe%20Index-8a2be2?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/vibe-index)
+[![Support on Boosty](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Sponsorship&logo=Boosty&logoColor=white&color=%23F15F2C)](https://boosty.to/roxblnfk)
+
+[![Vibe Index](https://img.shields.io/static/v1?label=Vibe+Index&message=0.0&color=6c5ce7&style=flat-square)](https://github.com/roxblnfk/action-vibe-index)
+[![Tests](https://img.shields.io/github/actions/workflow/status/php-internal/actions/tests.yml?branch=main&style=flat-square&logo=github&label=tests)](https://github.com/php-internal/actions/actions/workflows/tests.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](composer.json)
 
 </div>
 
