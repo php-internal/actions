@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/php-internal/actions/compare/v1.1.0...v1.1.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **downgrade:** disable composer plugins during the throwaway installs ([b4acf11](https://github.com/php-internal/actions/commit/b4acf11e4ad7947f4a89255c43e146bcd9fa7993))
+* **downgrade:** disable plugins for the platform-config step too ([2e68f21](https://github.com/php-internal/actions/commit/2e68f21aa57821eb7351767527b4c1b882ef8b5f))
+
 ## [1.1.0](https://github.com/php-internal/actions/compare/v1.0.0...v1.1.0) (2026-09-11)
 
 
