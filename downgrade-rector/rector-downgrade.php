@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
+use PhpInternal\Actions\Downgrade\DowngradeInput;
 use Rector\Config\RectorConfig;
 
+require __DIR__ . '/DowngradeInput.php';
+
 /**
- * Rector config for the `downgrade-rector` action. Driven by two environment variables the
- * action sets: DOWNGRADE_PATHS (space-separated, workspace-relative) and DOWNGRADE_PHP_VERSION.
+ * Rector config for the `downgrade-rector` action. Driven by three environment variables the action
+ * sets: DOWNGRADE_PATHS and DOWNGRADE_SKIP (whitespace- or newline-separated, workspace-relative)
+ * and DOWNGRADE_PHP_VERSION. The input parsing lives in {@see DowngradeInput}; this file only wires
+ * the parsed values into Rector.
  *
  * It applies Rector's full downgrade set down to the requested version, so every construct
  * newer than the target — not just `readonly class` — is rewritten to a compatible form.
@@ -14,36 +19,9 @@ use Rector\Config\RectorConfig;
 
 $workspace = getenv('GITHUB_WORKSPACE') ?: getcwd();
 
-// Split a list input. Written on one line it is whitespace-separated (the compact form); written as
-// a multiline block it is one entry per line, which lets an entry contain spaces. Entries are
-// trimmed and blanks dropped.
-$splitList = static function (string $raw): array {
-    $parts = str_contains($raw, "\n")
-        ? preg_split('/\R/', $raw)
-        : preg_split('/\s+/', trim($raw));
-
-    return array_values(array_filter(array_map('trim', $parts ?: []), static fn(string $p): bool => $p !== ''));
-};
-
-$paths = [];
-foreach ($splitList((string) getenv('DOWNGRADE_PATHS')) as $path) {
-    $paths[] = $workspace . '/' . ltrim($path, '/');
-}
-$paths === [] and throw new RuntimeException('DOWNGRADE_PATHS resolved to no paths.');
-
-$version = trim((string) getenv('DOWNGRADE_PHP_VERSION')) ?: '8.1';
-$supported = ['8.0', '8.1', '8.2', '8.3', '8.4'];
-\in_array($version, $supported, true) or throw new RuntimeException(
-    "Unsupported target PHP version '{$version}'. Expected one of: " . implode(', ', $supported) . '.',
-);
-
-// A glob pattern is passed to Rector verbatim; a plain path is resolved against the workspace.
-$skip = [];
-foreach ($splitList((string) getenv('DOWNGRADE_SKIP')) as $entry) {
-    $skip[] = (str_contains($entry, '*') || str_starts_with($entry, '/'))
-        ? $entry
-        : $workspace . '/' . ltrim($entry, '/');
-}
+$paths = DowngradeInput::resolvePaths((string) getenv('DOWNGRADE_PATHS'), $workspace);
+$version = DowngradeInput::resolveVersion((string) getenv('DOWNGRADE_PHP_VERSION'));
+$skip = DowngradeInput::resolveSkip((string) getenv('DOWNGRADE_SKIP'), $workspace);
 
 return RectorConfig::configure()
     ->withPaths($paths)
