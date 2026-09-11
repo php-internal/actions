@@ -1,8 +1,8 @@
-# php-internal/actions
+<h1 align="center">php-internal/actions</h1>
 
 <div align="center">
 
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Vibe%20Index-8a2be2?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/vibe-index)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-php--internal%2Factions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/php-internal/actions)
 [![Support on Boosty](https://img.shields.io/static/v1?style=for-the-badge&label=&message=Sponsorship&logo=Boosty&logoColor=white&color=%23F15F2C)](https://boosty.to/roxblnfk)
 
 [![Vibe Index](https://img.shields.io/static/v1?label=Vibe+Index&message=0.0&color=6c5ce7&style=flat-square)](https://github.com/roxblnfk/action-vibe-index)
