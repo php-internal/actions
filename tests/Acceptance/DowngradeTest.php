@@ -31,6 +31,34 @@ final class DowngradeTest
         }
         PHP;
 
+    // A composer plugin whose activation aborts the run. Composer activates an allowed plugin on
+    // every install/update — even under --no-scripts — so if the downgrade installs let plugins
+    // run, this fails the whole resolve; the action must pass --no-plugins to keep it dormant.
+    private const FAILING_PLUGIN = <<<'PHP'
+        <?php
+
+        declare(strict_types=1);
+
+        namespace Acme\Plugin;
+
+        use Composer\Composer;
+        use Composer\IO\IOInterface;
+        use Composer\Plugin\PluginInterface;
+
+        final class FailingPlugin implements PluginInterface
+        {
+            public function activate(Composer $composer, IOInterface $io): void
+            {
+                \fwrite(\STDERR, "composer plugin activated on the downgrade runtime\n");
+                exit(1);
+            }
+
+            public function deactivate(Composer $composer, IOInterface $io): void {}
+
+            public function uninstall(Composer $composer, IOInterface $io): void {}
+        }
+        PHP;
+
     private AcceptanceProject $project;
 
     #[AfterTest]
@@ -103,6 +131,37 @@ final class DowngradeTest
 
         Assert::same($result['exit'], 0, $result['stderr']);
         Assert::string($this->project->read('weird dir/Card.php'))->notContains('readonly class');
+    }
+
+    public function doesNotRunComposerPluginsDuringInstall(): void
+    {
+        $this->project = AcceptanceProject::create();
+        $this->project->writeComposer([
+            'name' => 'acme/app',
+            'require' => ['acme/plugin' => '*'],
+            // Allow the plugin explicitly: an un-allowed plugin is silently skipped in
+            // non-interactive mode, which would hide the bug this test exists to catch.
+            'config' => ['allow-plugins' => ['acme/plugin' => true]],
+            'repositories' => [
+                ['type' => 'path', 'url' => 'packages/acme-plugin', 'options' => ['symlink' => true]],
+                ['packagist.org' => false],
+            ],
+        ]);
+        $this->project->addPathPackage(
+            'acme/plugin',
+            [
+                'version' => '1.0.0',
+                'type' => 'composer-plugin',
+                'require' => ['composer-plugin-api' => '^2', 'php' => '>=8.0'],
+                'extra' => ['class' => 'Acme\\Plugin\\FailingPlugin'],
+                'autoload' => ['psr-4' => ['Acme\\Plugin\\' => 'src/']],
+            ],
+            ['src/FailingPlugin.php' => self::FAILING_PLUGIN],
+        );
+
+        $result = $this->project->runInstall('8.1');
+
+        Assert::same($result['exit'], 0, $result['stderr']);
     }
 
     private function projectRequiring(string $package): AcceptanceProject
