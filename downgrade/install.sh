@@ -31,7 +31,10 @@ cd "$workdir"
 downgrade_root=".php-downgrade"
 mkdir -p "$downgrade_root"
 
-update_flags=(--no-interaction --no-progress --no-scripts --with-all-dependencies)
+# --no-scripts and --no-plugins keep the project's own code out of the resolve: the installs run on
+# the older *target* runtime, but the sources being pulled target a newer PHP, so a root script or a
+# dependency's composer plugin would execute newer-PHP code on the older interpreter and fatal.
+update_flags=(--no-interaction --no-progress --no-scripts --no-plugins --with-all-dependencies)
 case "$deps" in
   lowest) update_flags+=(--prefer-lowest) ;;
   highest | '') ;;
