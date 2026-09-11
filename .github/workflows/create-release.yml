@@ -1,0 +1,68 @@
+---
+
+# https://github.com/google-github-actions/release-please-action#release-types-supported
+# https://github.com/googleapis/release-please/blob/main/docs/customizing.md
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - main
+
+name: 📦 Create release
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🎉 Create release
+        uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .github/.release-please-config.json
+          manifest-file: resources/version.json
+          target-branch: main
+
+      # The Vibe Index badge rides along in the release pull request instead of
+      # landing on main by itself: one badge commit per release rather than one
+      # per push. Checking the pull request branch out is what puts the commit
+      # there — the action pushes to whatever HEAD points at.
+      - name: 📦 Check out the release pull request branch
+        uses: actions/checkout@v6
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        with:
+          # The score is read from the commit history; a shallow clone would
+          # score whatever slice of it the runner happened to fetch.
+          fetch-depth: 0
+          ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
+
+      - name: ✨ Refresh the Vibe Index badge
+        uses: roxblnfk/action-vibe-index@v1
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        with:
+          commit: true
+          push: true
+
+      # Once the release PR is merged and a release is cut, move the `v1` major
+      # tag onto it so `php-internal/actions/<name>@v1` always points at the
+      # latest 1.x release. The ref is force-updated through the API, so the tag
+      # is authored by github-actions[bot] and no checkout is needed.
+      - name: 🏷️ Move the major version tag
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MAJOR: v${{ steps.release.outputs.major }}
+          SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          if gh api "repos/${REPO}/git/refs/tags/${MAJOR}" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/${REPO}/git/refs/tags/${MAJOR}" -f "sha=${SHA}" -F force=true
+          else
+            gh api -X POST "repos/${REPO}/git/refs" -f "ref=refs/tags/${MAJOR}" -f "sha=${SHA}"
+          fi
+
+...

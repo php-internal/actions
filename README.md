@@ -1,5 +1,13 @@
 # php-internal/actions
 
+<div align="center">
+
+[![Vibe Index](https://img.shields.io/static/v1?label=Vibe+Index&message=0.0&color=1cba95&style=for-the-badge)](https://github.com/roxblnfk/action-vibe-index)
+[![Tests](https://img.shields.io/github/actions/workflow/status/php-internal/actions/tests.yml?branch=main&style=for-the-badge&logo=github&label=tests)](https://github.com/php-internal/actions/actions/workflows/tests.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](composer.json)
+
+</div>
+
 Shared GitHub Actions for [php-internal](https://github.com/php-internal) packages. Each
 action lives in its own directory and is referenced as `php-internal/actions/<name>@<ref>`.
 
