@@ -48,8 +48,9 @@ composer update "${update_flags[@]}" --ignore-platform-reqs
 echo "::endgroup::"
 
 # Phase 1: pin the platform and drop the root's own php gate, then relieve the hard packages the
-# solver rejects, one failure wave at a time.
-composer config platform.php "$target"
+# solver rejects, one failure wave at a time. `config` boots Composer fully and would activate an
+# installed plugin — running its newer-PHP code on the target runtime — so it too gets --no-plugins.
+composer config platform.php "$target" --no-plugins
 php "$helper" loosen-root composer.json "$target"
 
 processed=" "   # space-delimited set of packages already relieved
