@@ -124,4 +124,21 @@ final class ComposerHelperPureTest
         Assert::true(isset($data['repositories']['private']));
         Assert::same($data['repositories']['php-downgrade-php-downgrade-acme-lib']['url'], '.php-downgrade/acme/lib');
     }
+
+    public function isProjectLocalAcceptsASourceUnderTheRoot(): void
+    {
+        $sep = \DIRECTORY_SEPARATOR;
+
+        Assert::true(ComposerHelper::isProjectLocal("{$sep}app{$sep}plugin{$sep}bench", "{$sep}app"));
+    }
+
+    public function isProjectLocalRejectsVendorAndOutsideSources(): void
+    {
+        $sep = \DIRECTORY_SEPARATOR;
+
+        Assert::false(ComposerHelper::isProjectLocal("{$sep}app{$sep}vendor{$sep}acme{$sep}lib", "{$sep}app"));
+        Assert::false(ComposerHelper::isProjectLocal("{$sep}app{$sep}vendor", "{$sep}app"));
+        Assert::false(ComposerHelper::isProjectLocal("{$sep}elsewhere{$sep}acme{$sep}lib", "{$sep}app"));
+        Assert::false(ComposerHelper::isProjectLocal("{$sep}app-sibling{$sep}lib", "{$sep}app"));
+    }
 }

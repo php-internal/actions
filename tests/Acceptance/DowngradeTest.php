@@ -69,19 +69,46 @@ final class DowngradeTest
 
     public function relievesAndDowngradesAHardDependency(): void
     {
-        $this->project = $this->projectRequiring('acme/hard');
-        $this->project->addPathPackage(
+        $this->project = AcceptanceProject::create();
+        $external = $this->project->addExternalPathPackage(
             'acme/hard',
             ['version' => '1.0.0', 'require' => ['php' => '>=8.2'], 'autoload' => ['psr-4' => ['Acme\\Hard\\' => 'src/']]],
             ['src/Card.php' => \sprintf(self::READONLY_CLASS, 'Acme\\Hard')],
         );
+        $this->project->writeComposer([
+            'name' => 'acme/app',
+            'require' => ['acme/hard' => '*'],
+            'repositories' => [
+                ['type' => 'path', 'url' => $external, 'options' => ['symlink' => true]],
+                ['packagist.org' => false],
+            ],
+        ]);
 
         $result = $this->project->runInstall('8.1');
 
         Assert::same($result['exit'], 0, $result['stderr']);
         Assert::true($this->project->exists('.php-downgrade/acme/hard/src/Card.php'));
         Assert::string($this->project->read('.php-downgrade/acme/hard/src/Card.php'))->notContains('readonly class');
+        Assert::string(\file_get_contents($external . '/src/Card.php'))->contains('readonly class');
         Assert::same($this->project->readJson('composer.json')['repositories'][0]['url'], '.php-downgrade/acme/hard');
+    }
+
+    public function loosensAProjectLocalHardPackageInPlace(): void
+    {
+        $this->project = $this->projectRequiring('acme/plugin');
+        $this->project->addPathPackage(
+            'acme/plugin',
+            ['version' => '1.0.0', 'require' => ['php' => '>=8.2'], 'autoload' => ['psr-4' => ['Acme\\Plugin\\' => 'src/']]],
+            ['src/Card.php' => \sprintf(self::READONLY_CLASS, 'Acme\\Plugin')],
+        );
+
+        $result = $this->project->runInstall('8.1');
+
+        Assert::same($result['exit'], 0, $result['stderr']);
+        Assert::false($this->project->exists('.php-downgrade/acme/plugin'));
+        Assert::same($this->project->readJson('packages/acme-plugin/composer.json')['require']['php'], '>=8.1');
+        Assert::string($this->project->read('packages/acme-plugin/src/Card.php'))->notContains('readonly class');
+        Assert::same($this->project->readJson('composer.json')['repositories'][0]['url'], 'packages/acme-plugin');
     }
 
     public function relievesAHardMetapackage(): void

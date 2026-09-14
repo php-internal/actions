@@ -96,6 +96,23 @@ final class ComposerHelper
     }
 
     /**
+     * Whether an installed package's real sources sit inside the project itself rather than under
+     * `vendor/` — a path-repository member (a monorepo plugin) symlinked into vendor/. Such a package
+     * must not be copied: the autoloader would serve the copy while anything that includes the
+     * project's own files by path still declares the originals, and PHP fatals on the second
+     * declaration. Both arguments are resolved absolute paths.
+     */
+    public static function isProjectLocal(string $source, string $root): bool
+    {
+        $root = rtrim($root, '/\\');
+        $vendor = $root . DIRECTORY_SEPARATOR . 'vendor';
+
+        return str_starts_with($source, $root . DIRECTORY_SEPARATOR)
+            && $source !== $vendor
+            && !str_starts_with($source, $vendor . DIRECTORY_SEPARATOR);
+    }
+
+    /**
      * Prepend a `path` repository to the root manifest, giving the copied package priority and
      * skipping the entry when it is already registered. Handles both the list and the keyed-object
      * form Composer accepts for `repositories`. Returns the rewritten manifest (idempotent).
@@ -202,6 +219,12 @@ final class ComposerHelper
      * compatibility, and prepend a path repository pointing at the copy. Composer then has to pick
      * this copy over the Packagist original: the original's untouched `require.php` is excluded by
      * the pinned platform, this copy's loosened one is not.
+     *
+     * A package whose sources already live inside the project ({@see isProjectLocal()}) is loosened
+     * where it lies: its existing path repository keeps serving it, so no copy and no new repository.
+     *
+     * Prints the root-relative path that now needs downgrading — the copy, or the in-place
+     * package — on stdout for the caller to hand to Rector.
      */
     public static function commandRelieve(string $pkg, string $dest, string $target, string $composerJson): void
     {
@@ -219,6 +242,17 @@ final class ComposerHelper
         } else {
             $source = realpath($root . '/vendor/composer/' . $info['install-path']);
             $source === false and self::fail("Cannot locate the installed sources of {$pkg}.");
+
+            if (self::isProjectLocal($source, $root)) {
+                $relative = str_replace('\\', '/', substr($source, strlen($root) + 1));
+                $loosened = self::loosenRoot(self::readJson($source . '/composer.json'), $target);
+                $loosened === null or self::writeJson($source . '/composer.json', $loosened);
+                self::note("Loosened project-local {$pkg} in place at {$relative}.");
+                echo $relative, "\n";
+
+                return;
+            }
+
             self::copyTree($source, $absoluteDest);
             $manifest = self::readJson($absoluteDest . '/composer.json');
         }
@@ -228,6 +262,7 @@ final class ComposerHelper
 
         self::writeJson($composerJson, self::addPathRepository(self::readJson($composerJson), $dest));
         self::note("Relieved {$pkg} ({$manifest['version']}) into {$dest}.");
+        echo $dest, "\n";
     }
 
     /**

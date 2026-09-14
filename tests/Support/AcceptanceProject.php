@@ -60,20 +60,27 @@ final class AcceptanceProject
      */
     public function addPathPackage(string $name, array $manifest, array $files = []): void
     {
-        $slug = \str_replace('/', '-', $name);
-        $manifest['name'] = $name;
-        $this->writeFile("packages/{$slug}/composer.json", (string) \json_encode($manifest, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
-        foreach ($files as $relative => $contents) {
-            $this->writeFile("packages/{$slug}/{$relative}", $contents);
-        }
+        $this->writePackage($this->path('packages/' . \str_replace('/', '-', $name)), $name, $manifest, $files);
+    }
+
+    /**
+     * Lay down a package *outside* the project tree — the shape of a third-party dependency, which
+     * the action must copy rather than touch in place — and return the absolute directory to
+     * register as a path repository. Removed together with the project.
+     *
+     * @param array<string, string> $files relative path within the package => contents
+     */
+    public function addExternalPathPackage(string $name, array $manifest, array $files = []): string
+    {
+        $dir = $this->externalRoot() . '/' . \str_replace('/', '-', $name);
+        $this->writePackage($dir, $name, $manifest, $files);
+
+        return $dir;
     }
 
     public function writeFile(string $relative, string $contents): void
     {
-        $path = $this->path($relative);
-        $dir = \dirname($path);
-        \is_dir($dir) or \mkdir($dir, 0o777, true);
-        \file_put_contents($path, $contents);
+        $this->writeAbsolute($this->path($relative), $contents);
     }
 
     /**
@@ -126,7 +133,11 @@ final class AcceptanceProject
 
     public function destroy(): void
     {
-        \is_dir($this->root) and $this->runScript('', [], "rm -rf " . \escapeshellarg($this->root));
+        \is_dir($this->root) and $this->runScript('', [], \sprintf(
+            'rm -rf %s %s',
+            \escapeshellarg($this->root),
+            \escapeshellarg($this->externalRoot()),
+        ));
     }
 
     private static function tool(string $name): bool
@@ -144,6 +155,27 @@ final class AcceptanceProject
         \fclose($pipes[2]);
 
         return \proc_close($process) === 0;
+    }
+
+    private function writePackage(string $dir, string $name, array $manifest, array $files): void
+    {
+        $manifest['name'] = $name;
+        $this->writeAbsolute("{$dir}/composer.json", (string) \json_encode($manifest, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
+        foreach ($files as $relative => $contents) {
+            $this->writeAbsolute("{$dir}/{$relative}", $contents);
+        }
+    }
+
+    private function externalRoot(): string
+    {
+        return $this->root . '-external';
+    }
+
+    private function writeAbsolute(string $path, string $contents): void
+    {
+        $dir = \dirname($path);
+        \is_dir($dir) or \mkdir($dir, 0o777, true);
+        \file_put_contents($path, $contents);
     }
 
     /**

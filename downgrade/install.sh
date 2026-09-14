@@ -9,8 +9,10 @@
 # Composer picks a target-compatible version of every dependency that has one (symfony 6 rather
 # than 8) and fails *only* on packages that have no compatible version at all. Those hard packages
 # are read off the failure, copied out of vendor/, re-advertised as target-compatible through a
-# path repository, and the resolve is retried until it settles. A final Rector pass downgrades the
-# copies (and any project paths) so the code parses on the target.
+# path repository, and the resolve is retried until it settles. A hard package whose sources already
+# live in the project (a path-repository member) is loosened in place instead of copied. A final
+# Rector pass downgrades the copies and in-place packages (and any project paths) so the code parses
+# on the target.
 #
 # Only the solver knows which incompatible packages are "hard" (no compatible version) versus
 # merely droppable (a lower compatible version exists); that is why the failure output drives the
@@ -90,10 +92,12 @@ for attempt in $(seq 1 50); do
     [ -z "$pkg" ] && continue
     case "$processed" in *" ${pkg} "*) continue ;; esac
 
+    # The helper prints the path that now needs downgrading: the copy, or the package itself
+    # when it was loosened in place.
     dest="${downgrade_root}/${pkg}"
-    php "$helper" relieve "$pkg" "$dest" "$target" composer.json
+    relieved="$(php "$helper" relieve "$pkg" "$dest" "$target" composer.json)"
     processed="${processed}${pkg} "
-    relieved_dirs+=("$dest")
+    relieved_dirs+=("$relieved")
     new_count=$((new_count + 1))
   done
 
@@ -108,9 +112,9 @@ if [ "$status" -ne 0 ]; then
   exit 1
 fi
 
-# Downgrade the relieved package copies (symlinked into vendor/) and any project paths, so the
-# code parses on the target. The `paths` input is a whitespace-separated list on one line, or one
-# path per line when written as a multiline block — the latter lets a path contain spaces.
+# Downgrade the relieved packages (copies symlinked into vendor/, or in-place ones) and any project
+# paths, so the code parses on the target. The `paths` input is a whitespace-separated list on one
+# line, or one path per line when written as a multiline block — the latter lets a path contain spaces.
 user_paths=()
 if [ -n "$paths" ]; then
   case "$paths" in
@@ -119,8 +123,18 @@ if [ -n "$paths" ]; then
   esac
 fi
 
+# An in-place package often already sits under one of the project paths; listing it again would only
+# make Rector walk it twice.
+rector_paths=("${user_paths[@]}")
+for dir in "${relieved_dirs[@]}"; do
+  covered=0
+  for user_path in "${user_paths[@]}"; do
+    if [ "$dir" = "${user_path%/}" ] || [[ "$dir" == "${user_path%/}/"* ]]; then covered=1; break; fi
+  done
+  if [ "$covered" -eq 0 ]; then rector_paths+=("$dir"); fi
+done
+
 # Skip Rector entirely when there is nothing to rewrite.
-rector_paths=("${user_paths[@]}" "${relieved_dirs[@]}")
 if [ "${#rector_paths[@]}" -eq 0 ]; then
   echo "Nothing to downgrade; every dependency already supports PHP ${target}."
   exit 0

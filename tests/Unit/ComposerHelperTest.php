@@ -63,6 +63,7 @@ final class ComposerHelperTest
         $result = $this->ws->runHelper('relieve', 'acme/lib', '.php-downgrade/acme/lib', '8.1', 'composer.json');
 
         Assert::same($result['exit'], 0);
+        Assert::same(\trim($result['stdout']), '.php-downgrade/acme/lib');
         $manifest = $this->ws->readJson('.php-downgrade/acme/lib/composer.json');
         Assert::same($manifest['require']['php'], '>=8.1');
         Assert::same($manifest['version'], '1.5.0');
@@ -74,6 +75,36 @@ final class ComposerHelperTest
         Assert::same($repositories[0]['type'], 'path');
         Assert::same($repositories[0]['url'], '.php-downgrade/acme/lib');
         Assert::true($repositories[0]['options']['symlink']);
+    }
+
+    public function relieveProjectLocalPackageLoosensItInPlace(): void
+    {
+        $this->ws = Workspace::create();
+        $this->ws->writeComposer([
+            'require' => ['acme/plugin' => '*'],
+            'repositories' => [['type' => 'path', 'url' => 'packages/*', 'options' => ['symlink' => true]]],
+        ]);
+        $this->ws->writeFile(
+            'packages/plugin/composer.json',
+            (string) \json_encode(['name' => 'acme/plugin', 'require' => ['php' => '>=8.2']]),
+        );
+        $this->ws->writeFile('packages/plugin/src/Widget.php', "<?php\n");
+        $this->ws->writeInstalled([[
+            'name' => 'acme/plugin',
+            'version' => '0.1.x-dev',
+            'type' => 'library',
+            'install-path' => '../../packages/plugin',
+            'require' => ['php' => '>=8.2'],
+        ]]);
+        $rootBefore = $this->ws->readJson('composer.json');
+
+        $result = $this->ws->runHelper('relieve', 'acme/plugin', '.php-downgrade/acme/plugin', '8.1', 'composer.json');
+
+        Assert::same($result['exit'], 0);
+        Assert::same(\trim($result['stdout']), 'packages/plugin');
+        Assert::same($this->ws->readJson('packages/plugin/composer.json')['require']['php'], '>=8.1');
+        Assert::false($this->ws->exists('.php-downgrade'));
+        Assert::same($this->ws->readJson('composer.json'), $rootBefore);
     }
 
     public function relieveMetapackageSynthesizesManifestWithoutCopying(): void

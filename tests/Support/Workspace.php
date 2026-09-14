@@ -119,16 +119,16 @@ final class Workspace
         \rmdir($this->root);
     }
 
-    private function writeJson(string $relative, array $data): void
-    {
-        $this->writeFile($relative, (string) \json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
-    }
-
-    private function writeFile(string $relative, string $contents): void
+    public function writeFile(string $relative, string $contents): void
     {
         $path = $this->path($relative);
         $dir = \dirname($path);
         \is_dir($dir) or \mkdir($dir, 0o777, true);
         \file_put_contents($path, $contents);
+    }
+
+    private function writeJson(string $relative, array $data): void
+    {
+        $this->writeFile($relative, (string) \json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES));
     }
 }

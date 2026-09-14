@@ -26,8 +26,12 @@ Then it pins `config.platform.php` to the target and resolves for real, so Compo
 target-compatible version of every dependency that has one (symfony 6 rather than 8) and fails
 *only* on packages that have no compatible version at all. Those — and only those — are copied
 out of `vendor/`, re-advertised as target-compatible through a path repository, and the resolve
-is retried until it settles. A single Rector pass (via `downgrade-rector`) then rewrites the copied
-packages and any project sources given in `paths`.
+is retried until it settles. A hard package whose sources already live inside the project — a
+path-repository member such as a monorepo plugin symlinked into `vendor/` — is not copied but has
+its `require.php` loosened where it lies: a copy would give its classes a second home, and any code
+that includes the project's own files by path would then declare them twice. A single Rector pass
+(via `downgrade-rector`) then rewrites the copied and in-place packages and any project sources
+given in `paths`.
 
 Only the solver can tell a *hard* package (no compatible version, e.g. a package that only ever
 targeted 8.2+) from a merely *droppable* one (a lower compatible version exists, e.g. symfony),
