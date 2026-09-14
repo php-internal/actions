@@ -79,7 +79,9 @@ for attempt in $(seq 1 50); do
   #   - vendor/pkg[1.0.0, ..., 2.0.0] require php >=8.2 -> ...
   # Keep the package token: the first field after the dash, stripped of any "[version list]".
   # The trailing space after "php" leaves ext requirements ("requires php-64bit") untouched.
-  mapfile -t blockers < <(
+  # A read loop rather than mapfile: macOS runners ship bash 3.2, which has no mapfile.
+  blockers=()
+  while IFS= read -r pkg; do blockers+=("$pkg"); done < <(
     printf '%s\n' "$output" \
       | grep -E ' requires? php ' \
       | sed -E 's/^[[:space:]]*-[[:space:]]+//; s/\[.*$//; s/[[:space:]].*$//' \
