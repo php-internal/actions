@@ -126,11 +126,12 @@ if [ -n "$paths" ]; then
 fi
 
 # An in-place package often already sits under one of the project paths; listing it again would only
-# make Rector walk it twice.
-rector_paths=("${user_paths[@]}")
-for dir in "${relieved_dirs[@]}"; do
+# make Rector walk it twice. The `${arr[@]+"${arr[@]}"}` form expands an empty array to nothing:
+# under `set -u`, bash before 4.4 (macOS ships 3.2) treats a plain "${arr[@]}" on one as unbound.
+rector_paths=(${user_paths[@]+"${user_paths[@]}"})
+for dir in ${relieved_dirs[@]+"${relieved_dirs[@]}"}; do
   covered=0
-  for user_path in "${user_paths[@]}"; do
+  for user_path in ${user_paths[@]+"${user_paths[@]}"}; do
     if [ "$dir" = "${user_path%/}" ] || [[ "$dir" == "${user_path%/}/"* ]]; then covered=1; break; fi
   done
   if [ "$covered" -eq 0 ]; then rector_paths+=("$dir"); fi
