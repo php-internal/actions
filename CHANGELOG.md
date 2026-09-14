@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/php-internal/actions/compare/v1.1.1...v1.1.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **downgrade:** loosen project-local path packages in place instead of copying them ([8a9388c](https://github.com/php-internal/actions/commit/8a9388c501dd1c28da04b0c638e09ba3e64b0398))
+
 ## [1.1.1](https://github.com/php-internal/actions/compare/v1.1.0...v1.1.1) (2026-09-11)
 
 
