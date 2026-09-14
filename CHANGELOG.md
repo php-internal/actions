@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.3](https://github.com/php-internal/actions/compare/v1.1.2...v1.1.3) (2026-09-14)
+
+
+### Bug Fixes
+
+* **downgrade:** expand empty path arrays safely on bash 3.2 ([83d10c0](https://github.com/php-internal/actions/commit/83d10c0dfe32299f3bf9b3eef8f91fc213d4a832))
+* **downgrade:** read the solver blockers without mapfile ([32639de](https://github.com/php-internal/actions/commit/32639dee0bdbc7f1eb72dc2a127035d1218d4d8a))
+
 ## [1.1.2](https://github.com/php-internal/actions/compare/v1.1.1...v1.1.2) (2026-09-14)
 
 
